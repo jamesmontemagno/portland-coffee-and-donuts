@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A map-first shortlist of Portland's coffee shops and doughnut stops, with neighborhood notes and directions.">
+  <title>Morning PDX — Portland coffee &amp; doughnuts</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#explore">Skip to the map and shortlist</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="wordmark" href="#top" aria-label="Morning PDX home">
+        <span class="wordmark-mark" aria-hidden="true">M</span>
+        <span class="wordmark-name">morning <strong>PDX</strong></span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#explore">The map</a>
+        <a href="#about">How we picked</a>
+      </nav>
+      <p class="header-note"><span class="status-dot" aria-hidden="true"></span> Portland, Oregon</p>
+    </div>
+  </header>
+
+  <main id="top" class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-main">
+        <h1 id="page-title">Good morning,<br><span>Portland.</span></h1>
+        <p>Six coffee stops. Six doughnut stops. A little local knowledge, wherever your morning starts.</p>
+      </div>
+      <div class="intro-aside">
+        <p class="intro-aside-title">A shortlist, not a scorecard.</p>
+        <p>Choose a craving, find a neighborhood, and let the map do the rest.</p>
+      </div>
+    </section>
+
+    <section id="explore" class="explorer" aria-label="Explore Portland coffee and doughnut shops">
+      <div class="explorer-toolbar">
+        <div class="filter-group" role="group" aria-label="Filter places by type">
+          <button class="filter-button is-active" type="button" data-category="all" aria-pressed="true">All stops <span data-count="all">12</span></button>
+          <button class="filter-button" type="button" data-category="coffee" aria-pressed="false">Coffee <span data-count="coffee">6</span></button>
+          <button class="filter-button" type="button" data-category="doughnut" aria-pressed="false">Doughnuts <span data-count="doughnut">6</span></button>
+        </div>
+        <div class="search-field">
+          <label class="visually-hidden" for="place-search">Search by shop, neighborhood, or address</label>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+            <path d="m16 16 4.5 4.5"></path>
+          </svg>
+          <input id="place-search" type="search" autocomplete="off" placeholder="Shop or neighborhood">
+          <button id="clear-search" type="button" aria-label="Clear search" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m6 6 12 12M18 6 6 18"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="explorer-grid">
+        <section class="directory-panel" aria-labelledby="directory-title">
+          <div class="directory-heading">
+            <div>
+              <h2 id="directory-title">The shortlist</h2>
+              <p id="results-count" role="status" aria-live="polite">12 stops</p>
+            </div>
+            <p class="sort-note">Listed by map key</p>
+          </div>
+          <p id="selection-hint" class="selection-hint">Choose a stop to see its address, a local note, and directions.</p>
+          <ol id="place-list" class="place-list"></ol>
+          <p id="empty-state" class="empty-state" hidden>No stops match that search. Try a shop name or a nearby neighborhood.</p>
+          <noscript>
+            <p class="map-alert">JavaScript is needed for the interactive map and filters. You can still browse the <a href="https://www.travelportland.com/culture/coffee/">Travel Portland coffee guide</a> and <a href="https://www.travelportland.com/culture/doughnut-shops-in-portland/">doughnut guide</a>.</p>
+          </noscript>
+        </section>
+
+        <section class="map-panel" aria-labelledby="map-title">
+          <div class="map-heading">
+            <div class="map-heading-copy">
+              <h2 id="map-title">Find your way</h2>
+              <p id="map-status" aria-live="polite">Select a numbered stop to see the details.</p>
+            </div>
+            <div class="map-tools">
+              <fieldset class="map-legend">
+                <legend class="visually-hidden">Map key</legend>
+                <span><i class="legend-mark legend-mark--coffee" aria-hidden="true"></i>Coffee</span>
+                <span><i class="legend-mark legend-mark--doughnut" aria-hidden="true"></i>Doughnuts</span>
+              </fieldset>
+              <button id="fit-map" class="text-button" type="button">Fit all stops</button>
+            </div>
+          </div>
+          <section id="map" class="map-canvas" aria-labelledby="interactive-map-title" aria-describedby="map-help">
+            <h3 id="interactive-map-title" class="visually-hidden">Interactive Portland map</h3>
+          </section>
+          <p id="map-help" class="visually-hidden">Use the map controls to zoom and pan. Selecting a numbered marker opens the place details. The shortlist remains available if the map cannot load.</p>
+          <p id="map-alert" class="map-alert" role="status" hidden></p>
+          <div class="map-caption">
+            <span>Portland, Oregon</span>
+            <span>Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></span>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="about" class="about-note" aria-labelledby="about-title">
+      <div>
+        <h2 id="about-title">A good place to start.</h2>
+        <p>These are local picks, not a ranking. Addresses and menus can change, so check the shop before you head out.</p>
+      </div>
+      <p class="source-links">
+        A little more reading:
+        <a href="https://www.travelportland.com/culture/coffee/" target="_blank" rel="noopener noreferrer">Travel Portland’s coffee guide</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://www.travelportland.com/culture/doughnut-shops-in-portland/" target="_blank" rel="noopener noreferrer">its doughnut guide</a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>Morning PDX</span>
+      <span>Made for a very good Portland morning.</span>
+      <a href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
